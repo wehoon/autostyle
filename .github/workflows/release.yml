@@ -1,0 +1,107 @@
+# .github/workflows/release.yml
+#
+# AutoStyle QGIS Plugin - 自动打包发布工作流
+# 当推送 v* 格式的 tag 时（如 v1.0.0），自动打包插件并创建 GitHub Release
+#
+
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:  # 手动触发开关，可指定Tag/分支
+    inputs:
+      version:
+        description: 'Release版本号（如v1.0.1）'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and Release Plugin
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 检出代码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 从 tag 中提取版本号
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      # 3. 验证 metadata.txt 中的版本号与 tag 一致
+      - name: Validate version consistency
+        run: |
+          METADATA_VERSION=$(grep "^version=" metadata.txt | cut -d'=' -f2)
+          TAG_VERSION=${{ steps.version.outputs.version }}
+          echo "metadata.txt version: $METADATA_VERSION"
+          echo "Tag version: $TAG_VERSION"
+          if [ "$METADATA_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Version mismatch! metadata.txt has $METADATA_VERSION but tag is v$TAG_VERSION"
+            exit 1
+          fi
+          echo "Version validation passed!"
+
+      # 4. 使用项目打包脚本打包插件
+      - name: Package plugin
+        id: package
+        run: |
+          chmod +x scripts/package.sh
+          ./scripts/package.sh
+
+          VERSION=${{ steps.version.outputs.version }}
+          ZIP_FILE="dist/AutoStyle-${VERSION}.zip"
+          ZIP_NAME="AutoStyle-${VERSION}.zip"
+
+          echo "zip_file=$ZIP_FILE" >> $GITHUB_OUTPUT
+          echo "zip_name=$ZIP_NAME" >> $GITHUB_OUTPUT
+
+      # 5. 从 metadata.txt 提取 changelog
+      - name: Extract changelog
+        id: changelog
+        run: |
+          CHANGELOG=$(grep "^changelog=" metadata.txt | cut -d'=' -f2-)
+          echo "changelog=$CHANGELOG" >> $GITHUB_OUTPUT
+
+      # 6. 创建 GitHub Release
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: AutoStyle ${{ steps.version.outputs.tag }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          body: |
+            ## AutoStyle ${{ steps.version.outputs.tag }}
+
+            ### 更新日志 / Changelog
+            ${{ steps.changelog.outputs.changelog }}
+
+            ### 安装说明 / Installation
+            1. 下载下方的 `${{ steps.package.outputs.zip_name }}` 文件
+            2. 打开 QGIS
+            3. 菜单: 插件 -> 管理和安装插件 -> 从 ZIP 文件安装
+            4. 选择下载的 ZIP 文件并安装
+
+            ---
+
+            1. Download `${{ steps.package.outputs.zip_name }}` below
+            2. Open QGIS
+            3. Menu: Plugins -> Manage and Install Plugins -> Install from ZIP
+            4. Select the downloaded ZIP file and install
+
+            ### 系统要求 / Requirements
+            - QGIS >= 3.22
+          files: ${{ steps.package.outputs.zip_file }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
