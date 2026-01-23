@@ -1,0 +1,18 @@
+[general]
+name=AutoStyle
+qgisMinimumVersion=3.22
+description=Style management and batch apply plugin with regex layer name matching. 样式表管理与一键应用插件，支持正则匹配图层名称自动应用QML样式。
+version=1.0.0
+author=AutoStyle Developer
+email=autostyle@example.com
+about=AutoStyle is a QGIS plugin for convenient style management and batch application. Create, edit, and delete style configs, then use regex patterns to match layer names and automatically apply corresponding QML style files. Supports Chinese/English interface based on QGIS language settings.
+    AutoStyle 是一款 QGIS 样式管理插件，提供便捷的样式表管理与一键应用功能。用户可以创建、编辑、删除样式配置表，通过正则表达式匹配图层名称，自动为匹配的图层应用对应的 QML 样式文件。支持根据 QGIS 语言设置自动切换中英文界面。
+tracker=https://github.com/wehoon/autostyle/issues
+repository=https://github.com/wehoon/autostyle
+changelog=1.0.0 - Initial release 初始版本发布
+tags=style,qml,layer,regex,batch,i18n
+homepage=https://github.com/wehoon/autostyle
+category=Vector
+icon=icon.svg
+experimental=False
+deprecated=False
