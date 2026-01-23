@@ -57,18 +57,16 @@ cp "$PLUGIN_DIR/__init__.py" "$TEMP_PLUGIN_DIR/"
 cp "$PLUGIN_DIR/auto_style.py" "$TEMP_PLUGIN_DIR/"
 cp "$PLUGIN_DIR/metadata.txt" "$TEMP_PLUGIN_DIR/"
 
-# Copy icon
-if [ -f "$PLUGIN_DIR/icon.png" ]; then
-    cp "$PLUGIN_DIR/icon.png" "$TEMP_PLUGIN_DIR/"
-elif [ -f "$PLUGIN_DIR/icon.svg" ]; then
-    cp "$PLUGIN_DIR/icon.svg" "$TEMP_PLUGIN_DIR/icon.png"
-fi
+# Copy icon (SVG only)
+cp "$PLUGIN_DIR/icon.svg" "$TEMP_PLUGIN_DIR/"
 
 # Copy core module
 mkdir -p "$TEMP_PLUGIN_DIR/core"
 cp "$PLUGIN_DIR/core/__init__.py" "$TEMP_PLUGIN_DIR/core/"
 cp "$PLUGIN_DIR/core/style_manager.py" "$TEMP_PLUGIN_DIR/core/"
 cp "$PLUGIN_DIR/core/layer_processor.py" "$TEMP_PLUGIN_DIR/core/"
+cp "$PLUGIN_DIR/core/i18n.py" "$TEMP_PLUGIN_DIR/core/"
+cp "$PLUGIN_DIR/core/update_checker.py" "$TEMP_PLUGIN_DIR/core/"
 
 # Copy ui module
 mkdir -p "$TEMP_PLUGIN_DIR/ui"
@@ -76,7 +74,7 @@ cp "$PLUGIN_DIR/ui/__init__.py" "$TEMP_PLUGIN_DIR/ui/"
 cp "$PLUGIN_DIR/ui/panel_widget.py" "$TEMP_PLUGIN_DIR/ui/"
 cp "$PLUGIN_DIR/ui/edit_dialog.py" "$TEMP_PLUGIN_DIR/ui/"
 
-# Create styles directory
+# Create empty styles directory
 mkdir -p "$TEMP_PLUGIN_DIR/styles"
 touch "$TEMP_PLUGIN_DIR/styles/.gitkeep"
 
