@@ -1,7 +1,7 @@
 {
-    "version": "1.0.1",
+    "version": "1.0.2",
     "release_date": "2026-01-23",
     "download_url": "https://git.woa.com/henryqi/autostyle/releases/latest",
-    "changelog": "1.0.1 修复自动更新功能 / Fix auto update feature\n\n1.0.0 初始版本 / Initial Release:\n- 样式配置管理\n- Style config management\n- 正则匹配图层名称\n- Regex layer name matching\n- 批量应用 QML 样式\n- Batch apply QML styles\n- 中英文界面支持\n- i18n support",
+    "changelog": "1.0.2 修复打包脚本问题 / Fix packaging script issue\n\n1.0.1 修复自动更新功能 / Fix auto update feature\n\n1.0.0 初始版本 / Initial Release:\n- 样式配置管理\n- Style config management\n- 正则匹配图层名称\n- Regex layer name matching\n- 批量应用 QML 样式\n- Batch apply QML styles\n- 中英文界面支持\n- i18n support",
     "min_qgis_version": "3.22"
 }
