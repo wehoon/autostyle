@@ -21,7 +21,7 @@ from qgis.core import QgsMessageLog
 
 # Default update check URL (GitHub raw content as example)
 # Users should replace this with their actual update server URL
-DEFAULT_VERSION_URL = "https://raw.githubusercontent.com/autostyle/autostyle/main/version.json"
+DEFAULT_VERSION_URL = "https://raw.githubusercontent.com/wehoon/autostyle/refs/heads/main/version.json"
 
 # Request timeout in seconds
 REQUEST_TIMEOUT = 10
