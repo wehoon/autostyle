@@ -7,8 +7,8 @@ Provides dialog interface for adding and editing style configs.
 
 from typing import Dict, List, Optional
 
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.QtGui import QFontMetrics
+from qgis.PyQt.QtCore import QRect, QSize, Qt
+from qgis.PyQt.QtGui import QColor, QFontMetrics, QPainter, QTextFormat
 from qgis.PyQt.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -166,6 +166,122 @@ BROWSE_BUTTON_STYLE = """
         background-color: #D0D0D0;
     }
 """
+
+# Line number area style constants
+LINE_NUMBER_BG_COLOR = QColor('#F5F5F5')
+LINE_NUMBER_TEXT_COLOR = QColor('#999999')
+LINE_NUMBER_PADDING = 10
+
+
+class LineNumberArea(QWidget):
+    """Line number area widget for QPlainTextEdit."""
+
+    def __init__(self, editor):
+        """
+        Initialize line number area.
+
+        :param editor: The associated QPlainTextEdit widget
+        """
+        super().__init__(editor)
+        self.editor = editor
+
+    def sizeHint(self) -> QSize:
+        """Return the recommended size."""
+        return QSize(self.editor.line_number_area_width(), 0)
+
+    def paintEvent(self, event):
+        """Paint the line numbers."""
+        self.editor.line_number_area_paint_event(event)
+
+
+class LineNumberedPlainTextEdit(QPlainTextEdit):
+    """QPlainTextEdit with line number display."""
+
+    def __init__(self, parent=None):
+        """Initialize the editor with line number area."""
+        super().__init__(parent)
+        self.line_number_area = LineNumberArea(self)
+
+        # Connect signals to update line number area
+        self.blockCountChanged.connect(self._update_line_number_area_width)
+        self.updateRequest.connect(self._update_line_number_area)
+
+        self._update_line_number_area_width()
+
+    def line_number_area_width(self) -> int:
+        """
+        Calculate the width needed for line number area.
+
+        :return: Width in pixels
+        """
+        digits = 1
+        max_num = max(1, self.blockCount())
+        while max_num >= 10:
+            max_num //= 10
+            digits += 1
+
+        # Ensure minimum 2 digits width
+        digits = max(digits, 2)
+
+        space = LINE_NUMBER_PADDING + self.fontMetrics().horizontalAdvance('9') * digits + LINE_NUMBER_PADDING
+        return space
+
+    def _update_line_number_area_width(self):
+        """Update the viewport margin to accommodate line numbers."""
+        self.setViewportMargins(self.line_number_area_width(), 0, 0, 0)
+
+    def _update_line_number_area(self, rect: QRect, dy: int):
+        """
+        Update line number area when text is scrolled or changed.
+
+        :param rect: The area that needs updating
+        :param dy: Vertical scroll amount
+        """
+        if dy:
+            self.line_number_area.scroll(0, dy)
+        else:
+            self.line_number_area.update(0, rect.y(), self.line_number_area.width(), rect.height())
+
+        if rect.contains(self.viewport().rect()):
+            self._update_line_number_area_width()
+
+    def resizeEvent(self, event):
+        """Handle resize event to adjust line number area."""
+        super().resizeEvent(event)
+        cr = self.contentsRect()
+        self.line_number_area.setGeometry(QRect(cr.left(), cr.top(), self.line_number_area_width(), cr.height()))
+
+    def line_number_area_paint_event(self, event):
+        """
+        Paint line numbers in the line number area.
+
+        :param event: Paint event
+        """
+        painter = QPainter(self.line_number_area)
+        painter.fillRect(event.rect(), LINE_NUMBER_BG_COLOR)
+
+        block = self.firstVisibleBlock()
+        block_number = block.blockNumber()
+        top = round(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
+        bottom = top + round(self.blockBoundingRect(block).height())
+
+        while block.isValid() and top <= event.rect().bottom():
+            if block.isVisible() and bottom >= event.rect().top():
+                number = str(block_number + 1)
+                painter.setPen(LINE_NUMBER_TEXT_COLOR)
+                painter.drawText(
+                    0,
+                    top,
+                    self.line_number_area.width() - LINE_NUMBER_PADDING,
+                    self.fontMetrics().height(),
+                    Qt.AlignRight,
+                    number,
+                )
+
+            block = block.next()
+            top = bottom
+            bottom = top + round(self.blockBoundingRect(block).height())
+            block_number += 1
 
 
 class StyleFileDelegate(QStyledItemDelegate):
@@ -361,9 +477,9 @@ class EditDialog(QDialog):
         header.setSectionResizeMode(0, QHeaderView.Interactive)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
 
-        # Set compact row height
+        # Set compact row height and show row numbers
         self.rules_table.verticalHeader().setDefaultSectionSize(26)
-        self.rules_table.verticalHeader().setVisible(False)
+        self.rules_table.verticalHeader().setVisible(True)
 
         # Set custom delegate for style file path column (with file browser button)
         self.style_file_delegate = StyleFileDelegate(self.rules_table)
@@ -372,7 +488,7 @@ class EditDialog(QDialog):
         self.edit_stack.addWidget(self.rules_table)
 
         # Text edit area (index 1)
-        self.edit_content = QPlainTextEdit()
+        self.edit_content = LineNumberedPlainTextEdit()
         self.edit_content.setPlaceholderText(tr('text_placeholder'))
         self.edit_content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.edit_stack.addWidget(self.edit_content)
