@@ -1,7 +1,7 @@
 {
-    "version": "1.0.3",
+    "version": "1.0.4",
     "release_date": "2026-01-26",
-    "download_url": "https://github.com/wehoon/autostyle/releases/tag/v1.0.3",
-    "changelog": "1.0.3 规则编辑器增加行号显示 / Add line number display for rules editor\n\n1.0.2 修复打包脚本问题 / Fix packaging script issue\n\n1.0.1 修复自动更新功能 / Fix auto update feature\n\n1.0.0 初始版本 / Initial Release:\n- 样式配置管理\n- Style config management\n- 正则匹配图层名称\n- Regex layer name matching\n- 批量应用 QML 样式\n- Batch apply QML styles\n- 中英文界面支持\n- i18n support",
+    "download_url": "https://github.com/wehoon/autostyle/releases/tag/v1.0.4",
+    "changelog": "1.0.4 新增配置表导入导出功能 / Add config import/export feature\n\n1.0.3 规则编辑器增加行号显示 / Add line number display for rules editor\n\n1.0.2 修复打包脚本问题 / Fix packaging script issue\n\n1.0.1 修复自动更新功能 / Fix auto update feature\n\n1.0.0 初始版本 / Initial Release:\n- 样式配置管理\n- Style config management\n- 正则匹配图层名称\n- Regex layer name matching\n- 批量应用 QML 样式\n- Batch apply QML styles\n- 中英文界面支持\n- i18n support",
     "min_qgis_version": "3.22"
 }

@@ -13,6 +13,7 @@ from qgis.PyQt.QtSvg import QSvgRenderer
 from qgis.PyQt.QtWidgets import (
     QComboBox,
     QDialog,
+    QFileDialog,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -31,6 +32,11 @@ from ..core.style_manager import StyleManager
 # Button size constants
 BUTTON_MIN_WIDTH = 70
 BUTTON_HEIGHT = 28
+
+# Dialog size constants
+DIALOG_MIN_WIDTH = 400
+DIALOG_MAX_WIDTH = 800
+DIALOG_HEIGHT = 110
 
 # Button styles
 BUTTON_STYLE_NORMAL = """
@@ -180,6 +186,18 @@ SVG_ICON_HELP = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" f
   <line x1="12" y1="17" x2="12.01" y2="17"/>
 </svg>'''
 
+SVG_ICON_EXPORT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#505050" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+  <polyline points="7 10 12 15 17 10"/>
+  <line x1="12" y1="15" x2="12" y2="3"/>
+</svg>'''
+
+SVG_ICON_IMPORT = '''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#505050" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+  <polyline points="17 8 12 3 7 8"/>
+  <line x1="12" y1="3" x2="12" y2="15"/>
+</svg>'''
+
 
 def create_svg_icon(svg_content: str, size: int = 16) -> QIcon:
     """
@@ -223,12 +241,14 @@ class MainDialog(QDialog):
         self._dropdown_icon_path = self._create_dropdown_icon()
 
         self.setWindowTitle("AutoStyle")
-        self.setMinimumWidth(400)
-        self.setFixedHeight(110)
+        self.setMinimumWidth(DIALOG_MIN_WIDTH)
+        self.setMaximumWidth(DIALOG_MAX_WIDTH)
+        self.setFixedHeight(DIALOG_HEIGHT)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
 
         self._setup_ui()
         self._load_configs()
+        self._adjust_width()
 
     def _create_dropdown_icon(self) -> str:
         """
@@ -308,6 +328,26 @@ class MainDialog(QDialog):
         self.btn_delete.clicked.connect(self._on_delete_clicked)
         icon_btn_layout.addWidget(self.btn_delete)
 
+        # Export button
+        self.btn_export = QToolButton()
+        self.btn_export.setIcon(create_svg_icon(SVG_ICON_EXPORT, 16))
+        self.btn_export.setIconSize(QSize(16, 16))
+        self.btn_export.setFixedSize(QSize(BUTTON_HEIGHT, BUTTON_HEIGHT))
+        self.btn_export.setStyleSheet(ICON_BUTTON_STYLE)
+        self.btn_export.setToolTip(tr('export_config_tooltip'))
+        self.btn_export.clicked.connect(self._on_export_clicked)
+        icon_btn_layout.addWidget(self.btn_export)
+
+        # Import button
+        self.btn_import = QToolButton()
+        self.btn_import.setIcon(create_svg_icon(SVG_ICON_IMPORT, 16))
+        self.btn_import.setIconSize(QSize(16, 16))
+        self.btn_import.setFixedSize(QSize(BUTTON_HEIGHT, BUTTON_HEIGHT))
+        self.btn_import.setStyleSheet(ICON_BUTTON_STYLE)
+        self.btn_import.setToolTip(tr('import_config_tooltip'))
+        self.btn_import.clicked.connect(self._on_import_clicked)
+        icon_btn_layout.addWidget(self.btn_import)
+
         select_layout.addLayout(icon_btn_layout)
 
         config_layout.addLayout(select_layout)
@@ -371,12 +411,44 @@ class MainDialog(QDialog):
                 self.combo_configs.setCurrentIndex(index)
 
         self._update_button_states()
+        self._adjust_width()
+
+    def _adjust_width(self):
+        """Adjust dialog width based on config names."""
+        from qgis.PyQt.QtGui import QFontMetrics
+
+        if self.combo_configs.count() == 0:
+            self.resize(DIALOG_MIN_WIDTH, DIALOG_HEIGHT)
+            return
+
+        # Calculate max text width
+        font_metrics = QFontMetrics(self.combo_configs.font())
+        max_text_width = 0
+        for i in range(self.combo_configs.count()):
+            text = self.combo_configs.itemText(i)
+            text_width = font_metrics.horizontalAdvance(text)
+            max_text_width = max(max_text_width, text_width)
+
+        # Add padding for combobox (dropdown arrow, padding, border)
+        combobox_extra = 60
+        # Add space for label and buttons
+        # Label (~80px) + buttons (6 buttons * 30px) + spacing
+        other_elements = 80 + 6 * 30 + 50
+        # Add margins
+        margins = 12 * 2 + 12 * 2  # main layout + group box margins
+
+        total_width = max_text_width + combobox_extra + other_elements + margins
+        # Clamp to min/max
+        total_width = max(DIALOG_MIN_WIDTH, min(DIALOG_MAX_WIDTH, total_width))
+
+        self.resize(total_width, DIALOG_HEIGHT)
 
     def _update_button_states(self):
         """Update button states."""
         has_config = self.combo_configs.count() > 0
         self.btn_edit.setEnabled(has_config)
         self.btn_delete.setEnabled(has_config)
+        self.btn_export.setEnabled(has_config)
         self.btn_apply.setEnabled(has_config)
 
     def _on_config_changed(self, index):
@@ -438,6 +510,94 @@ class MainDialog(QDialog):
                 self._load_configs()
             else:
                 QMessageBox.warning(self, tr('delete_failed_title'), error)
+
+    def _on_export_clicked(self):
+        """Export button clicked callback."""
+        current_name = self.combo_configs.currentText()
+        if not current_name:
+            QMessageBox.warning(self, tr('hint_title'), tr('no_config_selected'))
+            return
+
+        # Open file save dialog
+        default_filename = f"{current_name}.json"
+        file_path, __ = QFileDialog.getSaveFileName(
+            self,
+            tr('export_config_title'),
+            default_filename,
+            tr('json_file_filter'),
+            options=QFileDialog.DontUseNativeDialog,
+        )
+
+        if not file_path:
+            return
+
+        # Export config
+        success, error = self.style_manager.export_config(current_name, file_path)
+        if success:
+            QMessageBox.information(
+                self,
+                tr('export_config_title'),
+                tr('export_success', path=file_path),
+            )
+        else:
+            QMessageBox.warning(
+                self,
+                tr('error_title'),
+                tr('export_failed', error=error),
+            )
+
+    def _on_import_clicked(self):
+        """Import button clicked callback."""
+        # Open file dialog
+        file_path, __ = QFileDialog.getOpenFileName(
+            self,
+            tr('import_config_title'),
+            "",
+            tr('json_file_filter'),
+            options=QFileDialog.DontUseNativeDialog,
+        )
+
+        if not file_path:
+            return
+
+        # Try to import config
+        success, error, config_name = self.style_manager.import_config(file_path, overwrite=False)
+
+        if not success:
+            if error == "EXISTS":
+                # Config already exists, ask for confirmation
+                reply = QMessageBox.question(
+                    self,
+                    tr('confirm_overwrite_title'),
+                    tr('import_config_exists', name=config_name),
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.No,
+                )
+                if reply == QMessageBox.Yes:
+                    success, error, config_name = self.style_manager.import_config(
+                        file_path,
+                        overwrite=True,
+                    )
+                else:
+                    return
+
+        if success:
+            self._load_configs()
+            # Select the imported config
+            index = self.combo_configs.findText(config_name)
+            if index >= 0:
+                self.combo_configs.setCurrentIndex(index)
+            QMessageBox.information(
+                self,
+                tr('import_config_title'),
+                tr('import_success', name=config_name),
+            )
+        else:
+            QMessageBox.warning(
+                self,
+                tr('error_title'),
+                tr('import_failed', error=error),
+            )
 
     def _on_apply_clicked(self):
         """Apply button clicked callback."""

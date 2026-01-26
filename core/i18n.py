@@ -282,6 +282,60 @@ _TRANSLATIONS = {
         'en': 'Exception while applying style: {error}',
     },
 
+    # ===== Export/Import =====
+    'export_config_tooltip': {
+        'zh': '导出配置表',
+        'en': 'Export Config',
+    },
+    'import_config_tooltip': {
+        'zh': '导入配置表',
+        'en': 'Import Config',
+    },
+    'export_config_title': {
+        'zh': '导出配置表',
+        'en': 'Export Config',
+    },
+    'import_config_title': {
+        'zh': '导入配置表',
+        'en': 'Import Config',
+    },
+    'export_success': {
+        'zh': '配置表已成功导出到:\n{path}',
+        'en': 'Config exported successfully to:\n{path}',
+    },
+    'export_failed': {
+        'zh': '导出失败: {error}',
+        'en': 'Export failed: {error}',
+    },
+    'import_success': {
+        'zh': '配置表 "{name}" 导入成功',
+        'en': 'Config "{name}" imported successfully',
+    },
+    'import_failed': {
+        'zh': '导入失败: {error}',
+        'en': 'Import failed: {error}',
+    },
+    'json_file_filter': {
+        'zh': 'JSON文件 (*.json);;所有文件 (*.*)',
+        'en': 'JSON Files (*.json);;All Files (*.*)',
+    },
+    'no_config_selected': {
+        'zh': '请先选择一个配置表',
+        'en': 'Please select a config first',
+    },
+    'import_config_exists': {
+        'zh': '配置表 "{name}" 已存在，是否覆盖？',
+        'en': 'Config "{name}" already exists. Overwrite?',
+    },
+    'confirm_overwrite_title': {
+        'zh': '确认覆盖',
+        'en': 'Confirm Overwrite',
+    },
+    'invalid_config_format': {
+        'zh': '无效的配置文件格式',
+        'en': 'Invalid config file format',
+    },
+
     # ===== Style Manager Error Messages =====
     'config_name_empty': {
         'zh': '配置表名称不能为空',
