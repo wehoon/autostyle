@@ -233,7 +233,10 @@ class MainDialog(QDialog):
         super().__init__(parent)
         self.plugin_dir = plugin_dir
         self.iface = iface
-        self.styles_dir = os.path.join(plugin_dir, 'styles')
+
+        # Use user's QGIS config directory for storing styles
+        from ..core.paths import get_styles_dir
+        self.styles_dir = get_styles_dir()
         self.style_manager = StyleManager(self.styles_dir)
         self.layer_processor = LayerProcessor(iface)
 
